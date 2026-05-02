@@ -1,0 +1,4 @@
+redis
+asyncpg
+fastapi[standard-no-fastapi-cloud-cli]
+prometheus-fastapi-instrumentator

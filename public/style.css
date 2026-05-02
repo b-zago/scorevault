@@ -1,0 +1,19 @@
+:root { color-scheme: dark; }
+body { font: 14px ui-monospace, monospace; background: #111; color: #f0f0f0; }
+main { max-width: 420px; margin: 3rem auto; padding: 0 1rem; }
+h1 { font-size: 12px; font-weight: 400; color: #aaa; letter-spacing: .15em; text-transform: uppercase; margin-bottom: 1rem; }
+.row { display: flex; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px solid #2a2a2a; }
+.rank { width: 20px; color: #888; font-size: 12px; text-align: right; }
+.rank.top { color: #e0bf5a; }
+.player { flex: 1; }
+.bar-wrap { width: 60px; height: 2px; background: #2a2a2a; }
+.bar { height: 2px; background: #888; }
+.score { font-variant-numeric: tabular-nums; }
+form { display: flex; gap: 6px; margin-top: 1rem; }
+input, button { font: inherit; height: 30px; padding: 0 10px; background: #1a1a1a; border: 1px solid #3a3a3a; border-radius: 4px; color: #f0f0f0; }
+input { flex: 1; min-width: 0; }
+input[type=number] { flex: none; width: 80px; }
+input::placeholder { color: #888; }
+button { cursor: pointer; }
+button:hover { background: #222; }
+#status { font-size: 12px; color: #aaa; margin-top: 8px; min-height: 1em; }
