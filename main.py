@@ -5,7 +5,6 @@ import time
 import asyncio
 import asyncpg
 import json
-import multiprocessing
 import redis.asyncio as redis
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Response
@@ -109,7 +108,7 @@ async def readiness(response: Response):
 
 @app.post("/kill")
 async def kill():
-    os.kill(os.getpid(), 9)
+    sys.exit("Get killed")
 
 
 @app.post("/chaos/flood-cache")
@@ -129,15 +128,18 @@ async def clear_cache():
 def _burn_cpu(duration: int):
     end = time.time() + duration
     while time.time() < end:
-        math.sqrt(123456789) * math.factorial(50)
+        math.factorial(5000)
 
 
 @app.get("/stress/cpu")
 async def stress_cpu(duration: int = 30):
-    p = multiprocessing.Process(target=_burn_cpu, args=(duration,))
-    p.start()
-    await asyncio.sleep(duration)
-    p.join()
+    await asyncio.to_thread(_burn_cpu, duration)
+    return {"status": "done", "duration_seconds": duration}
+
+
+@app.get("/stress/hang")
+async def stress_hang(duration: int = 30):
+    _burn_cpu(duration)
     return {"status": "done", "duration_seconds": duration}
 
 
@@ -148,9 +150,6 @@ def _burn_memory(mb: int, duration: int):
 
 
 @app.get("/stress/memory")
-async def stress_memory(mb: int = 100, duration: int = 30):
-    p = multiprocessing.Process(target=_burn_memory, args=(mb, duration))
-    p.start()
-    await asyncio.sleep(duration)
-    p.join()
+async def stress_memory(mb: int = 1024, duration: int = 30):
+    await asyncio.to_thread(_burn_memory, mb, duration)
     return {"status": "done", "allocated_mb": mb, "duration_seconds": duration}
