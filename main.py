@@ -5,6 +5,7 @@ import time
 import asyncio
 import asyncpg
 import json
+import multiprocessing
 import redis.asyncio as redis
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Response
@@ -125,19 +126,31 @@ async def clear_cache():
     return {"cleared": True}
 
 
-@app.get("/stress/cpu")
-def stress_cpu(duration: int = 30):
+def _burn_cpu(duration: int):
     end = time.time() + duration
-    iterations = 0
     while time.time() < end:
         math.sqrt(123456789) * math.factorial(50)
-        iterations += 1
-    return {"status": "done", "duration_seconds": duration, "iterations": iterations}
+
+
+@app.get("/stress/cpu")
+async def stress_cpu(duration: int = 30):
+    p = multiprocessing.Process(target=_burn_cpu, args=(duration,))
+    p.start()
+    await asyncio.sleep(duration)
+    p.join()
+    return {"status": "done", "duration_seconds": duration}
+
+
+def _burn_memory(mb: int, duration: int):
+    data = bytearray(mb * 1024 * 1024)
+    time.sleep(duration)
+    del data
 
 
 @app.get("/stress/memory")
 async def stress_memory(mb: int = 100, duration: int = 30):
-    data = bytearray(mb * 1024 * 1024)
+    p = multiprocessing.Process(target=_burn_memory, args=(mb, duration))
+    p.start()
     await asyncio.sleep(duration)
-    del data
+    p.join()
     return {"status": "done", "allocated_mb": mb, "duration_seconds": duration}
