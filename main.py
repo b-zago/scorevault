@@ -106,12 +106,12 @@ async def readiness(response: Response):
         return {"status": "not ready", "reason": str(e)}
 
 
-@app.post("/kill")
+@app.get("/kill")
 async def kill():
     sys.exit("Get killed")
 
 
-@app.post("/chaos/flood-cache")
+@app.get("/chaos/flood-cache")
 async def flood_cache():
     payload = "x" * 1_000_000
     for i in range(10_000):
@@ -119,7 +119,7 @@ async def flood_cache():
     return {"flooded": True}
 
 
-@app.post("/chaos/clear-cache")
+@app.get("/chaos/clear-cache")
 async def clear_cache():
     await rd.flushall()
     return {"cleared": True}
