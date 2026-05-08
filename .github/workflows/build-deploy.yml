@@ -33,7 +33,7 @@ jobs:
         with:
           load: true
           push: false
-          tags: ghcr.io/b-zago/scorevault/server:test
+          tags: ghcr.io/b-zago/scorevault/webserver:test
 
       - name: Short SHA
         if: ${{ github.event_name == 'push' }}
@@ -47,15 +47,15 @@ jobs:
           push: true
           platforms: linux/amd64,linux/arm64
           tags: |
-            ghcr.io/b-zago/scorevault/server:latest
-            ghcr.io/b-zago/scorevault/server:${{ steps.sha.outputs.sha }}
+            ghcr.io/b-zago/scorevault/webserver:latest
+            ghcr.io/b-zago/scorevault/webserver:${{ steps.sha.outputs.sha }}
 
   deploy:
     needs: build
     if: ${{ github.event_name == 'push' }}
     runs-on: ubuntu-latest
     env:
-      IMAGE_NAME: ghcr.io/b-zago/scorevault/server
+      IMAGE_NAME: ghcr.io/b-zago/scorevault/webserver
     steps:
       - name: Checkout k3s-cluster repo
         uses: actions/checkout@v6
@@ -70,9 +70,9 @@ jobs:
           else
             VALUES_FILE="charts/scorevault/values-stage.yml"
           fi
-          sed -i "s|server: ${{ env.IMAGE_NAME }}:.*|server: ${{ env.IMAGE_NAME }}:${{ needs.build.outputs.sha }}|" $VALUES_FILE
+          sed -i "s|image: ${{ env.IMAGE_NAME }}:.*|image: ${{ env.IMAGE_NAME }}:${{ needs.build.outputs.sha }}|" $VALUES_FILE
           git config user.email "ci@github.com"
           git config user.name "GitHub Actions"
           git add $VALUES_FILE
-          git commit -m "${{ github.ref_name }}: update scorevault server to ${{ needs.build.outputs.sha }}"
+          git commit -m "${{ github.ref_name }}: update scorevault webserver to ${{ needs.build.outputs.sha }}"
           git push
