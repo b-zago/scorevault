@@ -1,0 +1,15 @@
+name: Build and Deploy
+
+on:
+  push:
+    branches: [main, staging]
+
+jobs:
+  deploy:
+    permissions:
+      packages: write
+      contents: read
+    uses: b-zago/actions/.github/workflows/build-deploy-ghcr.yaml@v1
+    with:
+      imageName: webserver
+    secrets: inherit
