@@ -5,7 +5,6 @@ import time
 import asyncio
 import asyncpg
 import json
-import multiprocessing
 import redis.asyncio as redis
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Response
@@ -17,9 +16,9 @@ from prometheus_fastapi_instrumentator import Instrumentator
 try:
     REDIS = os.environ["REDIS"]
     DB_HOST = os.environ["DB_HOST"]
-    DB_NAME = os.environ["DB_NAME"]
-    DB_USER = os.environ["DB_USER"]
-    DB_PASSWORD = os.environ["DB_PASSWORD"]
+    DB_NAME = os.environ["POSTGRES_DB"]
+    DB_USER = os.environ["POSTGRES_USER"]
+    DB_PASSWORD = os.environ["POSTGRES_PASSWORD"]
 except KeyError as e:
     sys.exit(f"Missing environment variable: {e}")
 
@@ -107,12 +106,12 @@ async def readiness(response: Response):
         return {"status": "not ready", "reason": str(e)}
 
 
-@app.post("/kill")
+@app.get("/kill")
 async def kill():
-    os.kill(os.getpid(), 9)
+    sys.exit("Get killed")
 
 
-@app.post("/chaos/flood-cache")
+@app.get("/chaos/flood-cache")
 async def flood_cache():
     payload = "x" * 1_000_000
     for i in range(10_000):
@@ -120,7 +119,7 @@ async def flood_cache():
     return {"flooded": True}
 
 
-@app.post("/chaos/clear-cache")
+@app.get("/chaos/clear-cache")
 async def clear_cache():
     await rd.flushall()
     return {"cleared": True}
@@ -129,15 +128,18 @@ async def clear_cache():
 def _burn_cpu(duration: int):
     end = time.time() + duration
     while time.time() < end:
-        math.sqrt(123456789) * math.factorial(50)
+        math.factorial(5000)
 
 
 @app.get("/stress/cpu")
 async def stress_cpu(duration: int = 30):
-    p = multiprocessing.Process(target=_burn_cpu, args=(duration,))
-    p.start()
-    await asyncio.sleep(duration)
-    p.join()
+    await asyncio.to_thread(_burn_cpu, duration)
+    return {"status": "done", "duration_seconds": duration}
+
+
+@app.get("/stress/hang")
+async def stress_hang(duration: int = 30):
+    _burn_cpu(duration)
     return {"status": "done", "duration_seconds": duration}
 
 
@@ -148,9 +150,6 @@ def _burn_memory(mb: int, duration: int):
 
 
 @app.get("/stress/memory")
-async def stress_memory(mb: int = 100, duration: int = 30):
-    p = multiprocessing.Process(target=_burn_memory, args=(mb, duration))
-    p.start()
-    await asyncio.sleep(duration)
-    p.join()
+async def stress_memory(mb: int = 1024, duration: int = 30):
+    await asyncio.to_thread(_burn_memory, mb, duration)
     return {"status": "done", "allocated_mb": mb, "duration_seconds": duration}
