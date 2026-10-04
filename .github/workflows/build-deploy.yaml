@@ -8,7 +8,6 @@ jobs:
   deploy:
     permissions:
       packages: write
-      contents: read
       contents: write
     uses: b-zago/actions/.github/workflows/build-deploy-ghcr.yaml@v1
     with:
