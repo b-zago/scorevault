@@ -15,10 +15,10 @@ from prometheus_fastapi_instrumentator import Instrumentator
 
 try:
     REDIS = os.environ["REDIS"]
-    DB_HOST = os.environ["DB_HOST"]
+    DB_HOST = os.environ["db_host"]
     DB_NAME = os.environ["POSTGRES_DB"]
-    DB_USER = os.environ["POSTGRES_USER"]
-    DB_PASSWORD = os.environ["POSTGRES_PASSWORD"]
+    DB_USER = os.environ["db_username"]
+    DB_PASSWORD = os.environ["db_password"]
 except KeyError as e:
     sys.exit(f"Missing environment variable: {e}")
 
@@ -42,14 +42,14 @@ async def lifespan(app: FastAPI):
         user=DB_USER,
         password=DB_PASSWORD,
     )
-    await pg.execute("""
-        CREATE TABLE IF NOT EXISTS scores (
-            id SERIAL PRIMARY KEY,
-            player VARCHAR(50),
-            score INTEGER,
-            created_at TIMESTAMP DEFAULT NOW()
-        )
-    """)
+    # await pg.execute("""
+    #     CREATE TABLE IF NOT EXISTS scores (
+    #         id SERIAL PRIMARY KEY,
+    #         player VARCHAR(50),
+    #         score INTEGER,
+    #         created_at TIMESTAMP DEFAULT NOW()
+    #     )
+    # """)
     rd = await redis.from_url(f"redis://{REDIS}:6379")
     yield
     await pg.close()
