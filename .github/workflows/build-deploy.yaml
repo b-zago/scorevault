@@ -9,7 +9,7 @@ jobs:
     permissions:
       packages: write
       contents: write
-    uses: b-zago/actions/.github/workflows/build-deploy-ghcr.yaml@v1
+    uses: b-zago/actions/.github/workflows/box-deployment.yml@v1
     with:
       imageName: webserver
     secrets: inherit
