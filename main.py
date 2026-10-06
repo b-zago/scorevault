@@ -12,6 +12,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from prometheus_fastapi_instrumentator import Instrumentator
+from prometheus_client import start_http_server
 
 try:
     REDIS = os.environ["REDIS"]
@@ -32,10 +33,20 @@ pg = None
 rd = None
 CACHE_KEY = "leaderboard:top10"
 
+# Metrics are served on their own port so they are never routed through the
+# public Gateway. Prometheus scrapes this port directly, in-cluster.
+METRICS_PORT = int(os.environ.get("METRICS_PORT", "9000"))
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global pg, rd
+    # Starts a small, dedicated HTTP server (daemon thread) that serves
+    # /metrics from the default Prometheus registry on METRICS_PORT, while
+    # uvicorn keeps serving the app on the main port. Assumes a single worker
+    # process; running uvicorn with --workers > 1 would require prometheus_client
+    # multiprocess mode instead (each worker cannot bind the same port).
+    start_http_server(METRICS_PORT)
     pg = await asyncpg.connect(
         host=DB_HOST,
         database=DB_NAME,
@@ -58,7 +69,9 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
-Instrumentator().instrument(app).expose(app)
+# instrument() installs the middleware that records HTTP metrics for every
+# request. No .expose() here, so /metrics is NOT mounted on the main app port.
+Instrumentator().instrument(app)
 
 app.mount("/public", StaticFiles(directory="public"), name="public")
 
